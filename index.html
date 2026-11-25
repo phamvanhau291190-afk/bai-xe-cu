@@ -27,6 +27,7 @@ button{font-family:inherit;cursor:pointer}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10}
 #box{background:#fff8e6;border-radius:16px;width:92%;max-width:430px;max-height:80vh;overflow:auto;padding:14px;border:4px solid #b57d00;touch-action:pan-y}
 #box h3{margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+#box h4{margin:12px 0 2px;color:#8a4a00}
 .x{background:#e53935;color:#fff;border:0;border-radius:8px;width:30px;height:30px;font-size:16px}
 .row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #e6d9b5}
 .inf{flex:1;font-size:14px}.inf small{color:#666}
@@ -52,10 +53,12 @@ button{font-family:inherit;cursor:pointer}
 <button class="sb" id="b_s" style="left:6px;top:124px" onclick="go(mStaff)">👩<small>Nhân viên</small></button>
 <button class="sb" id="b_q" style="left:6px;top:186px" onclick="go(mQuest)">📋<small>Nhiệm vụ</small></button>
 <button class="sb" id="b_d" style="left:6px;top:248px" onclick="go(mDaily)">🎁<small>Quà ngày</small></button>
+<button class="sb" id="b_c" style="left:6px;top:310px" onclick="go(mCorp)">🏢<small>Tập đoàn</small></button>
 <button class="sb" id="b_wh" style="right:6px;top:62px" onclick="go(mWheel)">🎡<small>Vòng quay</small></button>
 <button class="sb" id="b_auct" style="right:6px;top:124px" onclick="go(mAuct)">🚚<small id="at"></small></button>
 <button class="sb" id="b_sh" style="right:6px;top:186px" onclick="go(mShop)">🏪<small>Cửa hàng</small></button>
 <button class="sb" id="b_g" style="right:6px;top:248px" onclick="go(mGarage)">🚗<small id="cc"></small></button>
+<button class="sb" id="b_n" style="right:6px;top:310px" onclick="go(mNet)">🤝<small>Đại lý</small></button>
 <button class="zb" style="bottom:136px" onclick="zoomAt(innerWidth/2,innerHeight/2,cam.z*1.2)">+</button>
 <button class="zb" style="bottom:90px" onclick="zoomAt(innerWidth/2,innerHeight/2,cam.z/1.2)">−</button>
 <div id="tut">👉 Bấm vào đây để thuê nhân viên làm mọi việc!</div>
@@ -96,26 +99,44 @@ const sx=i=>1.9+(i%3)*2,sy=i=>2+Math.floor(i/3)*2.4,ry=i=>2+i*2.4;
 const STF=[
  ['buyer','🛒','Nhân viên thu mua','Tự mua xe ở bãi đấu giá và nhận xe khách bán.',15000,2],
  ['mech','🔧','Thợ máy','Tự lấy xe hỏng ra sửa, sửa nhanh gấp đôi khi có thợ.',12000,3],
- ['stage','🅿️','Nhân viên trưng bày','Tự đưa xe đã sửa ra bãi trưng bày.',10000,2],
+ ['stage','🅿️','Nhân viên trưng bày','Tự đưa xe đã sửa ra bãi trưng bày (và tự độ xe nếu đã mở Xưởng độ).',10000,2],
  ['sales','💼','Nhân viên bán hàng','Tự đến chốt giá với khách đang chờ.',12000,3],
  ['mkt','📰','Nhân viên quảng cáo','Tự phát tờ rơi để kéo khách.',8000,1],
  ['asst','📋','Trợ lý','Tự nhận nhiệm vụ, quà ngày và quay vòng quay.',20000,1]];
 const ICON={buyer:'🛒',mech:'🔧',stage:'🅿️',sales:'💼',mkt:'📰',asst:'📋'};
 const LOOK={buyer:{shirt:'#2a6fdb',hair:'#2b1d12',skin:'#f1c9a0',hat:'#1d4fa8'},mech:{shirt:'#e8761c',hair:'#5a3a1e',skin:'#e0ac80',hat:'#ffd23a'},stage:{shirt:'#2aa84a',hair:'#111111',skin:'#f1c9a0',hat:'#1f7a38'},sales:{shirt:'#f4f4f4',hair:'#c9a227',skin:'#f1c9a0',hat:null,tie:'#d93a3a'},mkt:{shirt:'#e86fa8',hair:'#111111',skin:'#e0ac80',hat:null},asst:{shirt:'#8a4fd0',hair:'#5a3a1e',skin:'#f1c9a0',hat:null}};
 const HOME={buyer:[[3.2,10.5],[2.2,10.5]],mech:[[RX+1.05,ry(0)+.15],[RX+1.05,ry(1)+.15],[RX+1.05,ry(2)+.15]],stage:[[9.1,10.5],[8.6,9.7]],sales:[[6.4,9.3],[5.6,9.3],[4.8,9.3]],mkt:[[1.4,10.5]],asst:[[7.1,9.9]]};
+/* Tầng 3: chi nhánh */
+const BR=[{n:'Chi nhánh Trung tâm',cost:60000,inc:6},{n:'Chi nhánh Ngoại ô',cost:150000,inc:14},{n:'Chi nhánh Cảng',cost:400000,inc:32}];
+const NET_MAX=8;
 
 /* ===================== TRẠNG THÁI ===================== */
-const def=()=>({money:FULL_MONEY,gems:FULL_GEMS,lv:1,xp:0,vip:false,leaf:10,leafT:0,cars:[],nid:1,saleN:6,repN:2,cap:10,sign:0,deco:0,tools:0,spd:0,staff:{buyer:0,mech:0,stage:0,sales:0,mkt:0,asst:0},auct:[],auctT:1.5,trade:[],tradeT:30,wSun:true,wLeft:300,spinT:0,daily:0,quests:[],stat:{sold:0,profit:0},cT:3,snd:true,tut:false});
-function load(){try{const s=JSON.parse(localStorage.getItem('ucb2'));if(s&&s.cars){const d=Object.assign(def(),s);d.staff=Object.assign(def().staff,s.staff);return d}}catch(e){}return def()}
+const def=()=>({money:FULL_MONEY,gems:FULL_GEMS,free:true,lv:1,xp:0,vip:false,leaf:10,leafT:0,cars:[],nid:1,saleN:6,repN:2,cap:10,sign:0,deco:0,tools:0,spd:0,tune:0,br:[null,null,null],net:{a:0,b:0,c:0,tr:0,t:0},lastT:Date.now(),staff:{buyer:0,mech:0,stage:0,sales:0,mkt:0,asst:0},auct:[],auctT:1.5,trade:[],tradeT:30,wSun:true,wLeft:300,spinT:0,daily:0,quests:[],stat:{sold:0,profit:0},cT:3,snd:true,tut:false});
+function load(){try{const s=JSON.parse(localStorage.getItem('ucb2'));if(s&&s.cars){const d=Object.assign(def(),s);d.staff=Object.assign(def().staff,s.staff);d.net=Object.assign(def().net,s.net||{});if(!Array.isArray(d.br))d.br=[null,null,null];return d}}catch(e){}return def()}
 let S=load(),nosave=false,curM=null,cust=[],G=[],parts=[],W=[],wrot=0,wres='',AC=null;
 const T={x:-7,st:'away',t:0};
-S.money=Math.max(S.money,FULL_MONEY);S.gems=Math.max(S.gems,FULL_GEMS);
+while(S.br.length<3)S.br.push(null);
+if(S.free){S.money=Math.max(S.money,FULL_MONEY);S.gems=Math.max(S.gems,FULL_GEMS)}
 const xpN=()=>100+S.lv*60;
-const curVal=c=>c.v*(1-.18*c.d);
+const tnMul=()=>1.18+.04*S.tune;
+const curVal=c=>c.v*(1-.18*c.d)*(c.tn?tnMul():1);
 const ask=c=>Math.round(curVal(c)*(1+.05*S.sign+.03*S.deco)*(S.vip?1.15:1));
 const repCost=c=>Math.round(c.v*.07*c.d*(1-.05*S.tools));
+const tuneCost=c=>Math.round(c.v*.12);
 const quick=c=>Math.round(curVal(c)*.75);
-function mkCar(o){const c={id:o.id,mi:o.mi,col:o.col,v:o.v,d:o.d,cost:o.cost||0,st:o.st||'inv',slot:o.slot==null?-1:o.slot,p:o.p||0,rt:o.rt||0,offer:0,x:DOORX,y:9.9,dir:'y',fwd:1,after:'inv',path:null,claim:false,worker:false};
+/* thu nhập thụ động */
+const netMul=()=>(1+.25*S.net.tr)*(1+.08*S.lv);
+const netRate=()=>(S.net.a*3+S.net.b*1.2+S.net.c*.5)*netMul();
+const brInc=(b,i)=>BR[i].inc*b.lv;
+const brCap=(b,i)=>brInc(b,i)*600;
+const brUpCost=(b,i)=>Math.round(BR[i].cost*.6*1.7**(b.lv-1));
+const mgrCost=i=>Math.round(BR[i].cost*.5);
+const passiveRate=()=>netRate()+S.br.reduce((s,b,i)=>s+(b&&b.mgr?brInc(b,i):0),0);
+const agentCost=()=>Math.round(8000*1.6**S.net.a);
+const trainCost=()=>Math.round(15000*2**S.net.tr);
+const netIv=()=>Math.max(10,30-4*S.net.tr);
+const tuneUpCost=()=>S.tune?Math.round(20000*2**S.tune):30000;
+function mkCar(o){const c={id:o.id,mi:o.mi,col:o.col,v:o.v,d:o.d,tn:!!o.tn,cost:o.cost||0,st:o.st||'inv',slot:o.slot==null?-1:o.slot,p:o.p||0,rt:o.rt||0,offer:0,x:DOORX,y:9.9,dir:'y',fwd:1,after:'inv',path:null,claim:false,worker:false};
  if(c.st=='sale'){if(c.slot<0||c.slot>=9)c.st='inv';else{c.x=sx(c.slot);c.y=sy(c.slot)}}
  if(c.st=='rep'){if(c.slot<0||c.slot>=3)c.st='inv';else{c.x=RX;c.y=ry(c.slot);if(!c.rt)c.rt=Math.max(1,c.d)*7}}
  if(c.st=='inv'||c.st=='move')c.st='inv',c.slot=-1;return c}
@@ -129,31 +150,36 @@ function genQuests(){const L=S.lv;return[{t:'sell',txt:'Bán xe',need:3+Math.flo
 if(!S.quests.length)S.quests=genQuests();
 function ev(t,n=1){S.quests.forEach(q=>{if(q.t==t&&!q.done)q.have=Math.min(q.need,q.have+n)})}
 function addXp(n){S.xp+=n;while(S.xp>=xpN()){S.xp-=xpN();S.lv++;S.gems+=2;toast('⭐ Lên cấp '+S.lv+'! Nhận 2💎')}}
-function save(){if(nosave)return;try{const o=Object.assign({},S);
- o.cars=S.cars.map(c=>({id:c.id,mi:c.mi,col:c.col,v:c.v,d:c.d,cost:c.cost,st:c.st=='move'?c.after:c.st,slot:c.slot,p:c.p,rt:c.rt}));
+function save(){if(nosave)return;try{S.lastT=Date.now();const o=Object.assign({},S);
+ o.cars=S.cars.map(c=>({id:c.id,mi:c.mi,col:c.col,v:c.v,d:c.d,tn:c.tn,cost:c.cost,st:c.st=='move'?c.after:c.st,slot:c.slot,p:c.p,rt:c.rt}));
  const pa=a=>({id:a.id,mi:a.mi,col:a.col,v:a.v,d:a.d,price:a.price});o.auct=S.auct.map(pa);o.trade=S.trade.map(pa);
  localStorage.setItem('ucb2',JSON.stringify(o))}catch(e){}}
+function applyOffline(){const now=Date.now(),el=Math.min(28800,(now-(S.lastT||now))/1000);S.lastT=now;if(el<20)return;let g=0;
+ S.br.forEach((b,i)=>{if(!b)return;const r=brInc(b,i)*el*.5;if(b.mgr){S.money+=r;g+=r}else b.cash=Math.min(brCap(b,i),b.cash+r)});
+ const n=netRate()*el*.5;S.money+=n;g+=n;if(g>=1)toast('💤 Lúc bạn vắng mặt, thu nhập thụ động đã kiếm thêm '+fmt(g)+'💵')}
 
 /* ===================== ÂM THANH ===================== */
 addEventListener('pointerdown',()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume()}catch(e){}});
 function snd(f,d=.12,t='sine',v=.07){if(!S.snd||!AC)return;try{const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 
 /* ===================== GIAO DIỆN (MODAL) ===================== */
-function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',2200)}
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',2600)}
 function modal(t,h){$('mt').textContent=t;$('mb').innerHTML=h;$('modal').style.display='flex'}
 function closeM(){$('modal').style.display='none';curM=null}
 function go(f){curM=f;f()}
 function R_(){hud();if(curM&&$('modal').style.display=='flex')curM()}
 const btn=(l,f,ok,c='')=>`<button class="b ${c}${ok?'':' off'}" ${ok?`onclick="${f}"`:''}>${l}</button>`;
 const rw=r=>(r.gems?r.gems+'💎 ':'')+(r.money?fmt(r.money)+'💵':'');
-const carRow=(c,extra,b)=>`<div class="row"><div class="sw" style="background:${c.col}"></div><div class="inf"><b>${MD[c.mi].n}</b> · hư ${c.d}/3<br><small>${extra}</small></div><div class="bt">${b}</div></div>`;
+const carRow=(c,extra,b)=>`<div class="row"><div class="sw" style="background:${c.col}"></div><div class="inf"><b>${c.tn?'⚡ ':''}${MD[c.mi].n}</b> · hư ${c.d}/3<br><small>${extra}</small></div><div class="bt">${b}</div></div>`;
 function urow(k,name,desc,cost,mx,st=1,verb='Nâng cấp'){const full=S[k]>=mx;return `<div class="row"><div class="inf"><b>${name}</b><br><small>${desc}</small></div><div class="bt">${full?'Tối đa':btn(verb+' '+fmt(cost),`up('${k}',${cost},${mx},${st})`,S.money>=cost)}</div></div>`}
 function up(k,c,mx,st){if(S[k]>=mx||S.money<c)return;S.money-=c;S[k]+=st;R_()}
 
 function mGarage(){let h=`<p><small>Số xe: ${S.cars.length}/${S.cap}. Nhân viên sẽ tự xử lý xe, bạn cũng có thể tự làm.</small></p>`;
  if(!S.cars.length)h+='<p>Kho trống. Hãy mua xe ở bãi đấu giá (xe tải) hoặc ở mục Đổi xe.</p>';
  S.cars.forEach(c=>{const st=c.st=='sale'?'Đang trưng bày':c.st=='rep'?'Đang sửa '+Math.round(c.p*100)+'%':c.st=='move'?'Đang di chuyển':'Trong kho';let b='';
-  if(c.st=='inv'){if(c.d>0)b+=btn('Sửa '+fmt(repCost(c)),`repairBtn(${c.id})`,S.money>=repCost(c));b+=btn('Trưng bày',`displayBtn(${c.id})`,true)+btn('Bán nhanh '+fmt(quick(c)),`quickSell(${c.id})`,true)}
+  if(c.st=='inv'){if(c.d>0)b+=btn('Sửa '+fmt(repCost(c)),`repairBtn(${c.id})`,S.money>=repCost(c));
+   if(c.d==0&&S.tune>0&&!c.tn)b+=btn('⚡ Độ xe '+fmt(tuneCost(c)),`tuneBtn(${c.id})`,S.money>=tuneCost(c));
+   b+=btn('Trưng bày',`displayBtn(${c.id})`,true)+btn('Bán nhanh '+fmt(quick(c)),`quickSell(${c.id})`,true)}
   h+=carRow(c,`Giá trị ${fmt(curVal(c))} · ${st}`,b)});modal('🚗 Kho xe',h)}
 function launch(c,after,slot){c.st='move';c.after=after;c.slot=slot;c.x=DOORX;c.y=9.9;c.dir='y';c.fwd=1;c.offer=0;
  const p=[[DOORX,APRON],[DRV,APRON]];
@@ -166,10 +192,12 @@ function freeSale(){for(let i=0;i<S.saleN;i++)if(!S.cars.some(c=>(c.st=='sale'||
 function freeBay(){for(let i=0;i<S.repN;i++)if(!S.cars.some(c=>(c.st=='rep'||c.st=='move'&&c.after=='rep')&&c.slot==i))return i;return -1}
 function sendRepair(c,b){const cost=repCost(c);if(S.money<cost)return false;S.money-=cost;c.cost+=cost;c.p=0;c.rt=c.d*7;c.claim=false;launch(c,'rep',b);return true}
 function sendDisplay(c,i){c.claim=false;launch(c,'sale',i)}
+function doTune(c){const cost=tuneCost(c);if(S.money<cost||c.tn)return false;S.money-=cost;c.cost+=cost;c.tn=true;spark(c.x,c.y);snd(1200,.14,'triangle');return true}
+function tuneBtn(id){const c=S.cars.find(c=>c.id==id);if(!c||c.st!='inv'||c.d>0||c.tn||S.tune<1)return;if(!doTune(c))return toast('Không đủ tiền.');toast('⚡ Đã độ '+MD[c.mi].n+', giá trị tăng '+Math.round((tnMul()-1)*100)+'%');R_()}
 function repairBtn(id){const c=S.cars.find(c=>c.id==id);if(!c||c.st!='inv')return;const b=freeBay();if(b<0)return toast('Xưởng đang đầy. Mở thêm ô sửa xe ở mục Mở rộng.');if(!sendRepair(c,b))return toast('Không đủ tiền.');R_()}
 function displayBtn(id){const c=S.cars.find(c=>c.id==id);if(!c||c.st!='inv')return;const i=freeSale();if(i<0)return toast('Hết ô trưng bày. Mở thêm ở mục Mở rộng.');sendDisplay(c,i);R_()}
 function quickSell(id){const i=S.cars.findIndex(c=>c.id==id),c=S.cars[i];if(!c||c.st!='inv')return;const p=quick(c);S.money+=p;S.cars.splice(i,1);toast('Bán nhanh '+MD[c.mi].n+' +'+fmt(p));R_()}
-function mCar(id){const c=S.cars.find(c=>c.id==id);if(!c||c.st!='sale')return closeM();modal('🚗 '+MD[c.mi].n,`<p>Hư hỏng: ${c.d}/3<br>Giá treo: <b>${fmt(ask(c))}</b><br>Vốn bỏ ra: ${fmt(c.cost)}</p>`+btn('Cất về kho',`toGarage(S.cars.find(c=>c.id==${id}));closeM()`,true))}
+function mCar(id){const c=S.cars.find(c=>c.id==id);if(!c||c.st!='sale')return closeM();modal('🚗 '+MD[c.mi].n,`<p>Hư hỏng: ${c.d}/3${c.tn?' · ⚡ Đã độ':''}<br>Giá treo: <b>${fmt(ask(c))}</b><br>Vốn bỏ ra: ${fmt(c.cost)}</p>`+btn('Cất về kho',`toGarage(S.cars.find(c=>c.id==${id}));closeM()`,true))}
 
 function buyAuct(id){const i=S.auct.findIndex(a=>a.id==id);if(i<0)return;const a=S.auct[i];
  if(T.st!='park')return toast('Xe tải chưa tới nơi.');if(S.cars.length>=S.cap)return toast('Kho đầy. Hãy mở rộng kho.');if(S.money<a.price)return toast('Không đủ tiền.');
@@ -226,10 +254,54 @@ function exch(g,m){if(S.gems<g)return;S.gems-=g;S.money+=m;R_()}
 function buyLeaf(){if(S.gems<3)return;S.gems-=3;S.leaf=10;R_()}
 function mProfile(){modal('👑 Hồ sơ & VIP',`<p>Cấp ${S.lv} · Đã bán ${S.stat.sold} xe<br>Tổng lợi nhuận: ${fmt(S.stat.profit)}💵</p><div class="row"><div class="inf"><b>👑 VIP</b><br><small>Tăng 15% giá bán vĩnh viễn.</small></div><div class="bt">${S.vip?'Đã mua':btn('50💎','buyVip()',S.gems>=50)}</div></div>`)}
 function buyVip(){if(S.gems<50)return;S.gems-=50;S.vip=true;R_()}
-function mSet(){modal('⚙ Cài đặt',`<p>Game tự lưu trong trình duyệt mỗi 5 giây. Kéo ngón tay để di chuyển bãi, chụm hai ngón để phóng to.</p>`+btn(S.snd?'🔊 Âm thanh: Bật':'🔇 Âm thanh: Tắt','S.snd=!S.snd;R_()',true)+' '+btn('Xóa tiến trình, chơi lại','resetG()',true))}
+function mSet(){modal('⚙ Cài đặt',`<p>Game tự lưu trong trình duyệt mỗi 5 giây. Kéo ngón tay để di chuyển bãi, chụm hai ngón để phóng to.</p>`+btn(S.snd?'🔊 Âm thanh: Bật':'🔇 Âm thanh: Tắt','S.snd=!S.snd;R_()',true)+' '+btn(S.free?'💰 Tiền vô hạn: Bật':'💰 Tiền vô hạn: Tắt','toggleFree()',true)+' '+btn('Xóa tiến trình, chơi lại','resetG()',true))}
+function toggleFree(){if(S.free){if(!confirm('Tắt tiền vô hạn? Tiền sẽ giảm về tối đa 20.000 và kim cương về tối đa 20.'))return;S.free=false;S.money=Math.min(S.money,20000);S.gems=Math.min(S.gems,20)}else{S.free=true;S.money=Math.max(S.money,FULL_MONEY);S.gems=Math.max(S.gems,FULL_GEMS)}R_()}
 function resetG(){if(confirm('Xóa hết tiến trình?')){nosave=true;localStorage.removeItem('ucb2');location.reload()}}
 function useLeaf(auto){if(S.leaf<=0){if(!auto)toast('Hết tờ rơi, chờ hồi thêm.');return}if(!S.cars.some(c=>c.st=='sale')){if(!auto)toast('Hãy trưng bày xe trước khi phát tờ rơi.');return}
  S.leaf--;for(let i=0;i<3;i++)spawnCust();if(!auto)toast('📰 Khách đang kéo đến!');hud()}
+
+/* ===================== TẬP ĐOÀN (TẦNG 2, TẦNG 3) ===================== */
+function mCorp(){
+ let h='<p><small>Phát triển từ bãi xe nhỏ thành tập đoàn. Thu nhập thụ động vẫn chạy khi bạn thoát game (tối đa 8 giờ, tính bằng nửa tốc độ).</small></p>';
+ h+=`<div class="row"><div class="inf"><b>💹 Thu nhập thụ động</b><br><small>Từ chi nhánh có quản lý và mạng lưới đại lý</small></div><div class="bt"><b id="inc_tot">${fmt(passiveRate())}/giây</b></div></div>`;
+ h+='<h4>Tầng 1 · Bãi xe cũ ✅</h4><p><small>Mua xe, sửa, trưng bày và bán. Đây là nền móng của cả tập đoàn.</small></p>';
+ h+='<h4>Tầng 2 · Xưởng độ xe</h4>'+urow('tune','⚡ Xưởng độ (cấp '+S.tune+'/5)',S.tune?'Xe đã sửa xong được độ sẽ có giá trị cao hơn '+Math.round((tnMul()-1)*100)+'%. Nhân viên trưng bày sẽ tự độ xe.':'Mở xưởng để độ xe đã sửa, tăng giá bán. Mỗi cấp tăng thêm 4% giá trị xe độ.',tuneUpCost(),5,1,S.tune?'Nâng cấp':'Mở xưởng');
+ h+='<h4>Tầng 3 · Chuỗi chi nhánh</h4>';
+ if(S.tune<1)h+='<p><small>🔒 Cần mở Xưởng độ (Tầng 2) trước.</small></p>';
+ else{
+  if(S.br.some((b,i)=>b&&!b.mgr))h+=btn('Thu tiền tất cả chi nhánh','collectAll()',true,'big');
+  BR.forEach((d,i)=>{const b=S.br[i];
+   if(!b)h+=`<div class="row"><div class="inf"><b>🏬 ${d.n}</b><br><small>Sinh ${d.inc} 💵/giây ở cấp 1.</small></div><div class="bt">${btn('Mua '+fmt(d.cost),`buyBr(${i})`,S.money>=d.cost)}</div></div>`;
+   else{let bt='';if(!b.mgr)bt+=btn('Thu tiền',`collectBr(${i})`,b.cash>=1)+btn('Thuê quản lý '+fmt(mgrCost(i)),`hireMgr(${i})`,S.money>=mgrCost(i));
+    bt+=b.lv<10?btn('Nâng cấp '+fmt(brUpCost(b,i)),`upBr(${i})`,S.money>=brUpCost(b,i)):'<small>Cấp tối đa</small>';
+    h+=`<div class="row"><div class="inf"><b>🏬 ${d.n}</b> (cấp ${b.lv}/10)<br><small>+${fmt(brInc(b,i))}/giây · ${b.mgr?'Có quản lý, tiền tự chuyển về':'Tiền chờ thu: <span id="bc'+i+'">'+fmt(b.cash)+' / '+fmt(brCap(b,i))+'</span>'}</small></div><div class="bt">${bt}</div></div>`}})}
+ modal('🏢 Tập đoàn',h)}
+function buyBr(i){const c=BR[i].cost;if(S.br[i]||S.money<c||S.tune<1)return;S.money-=c;S.br[i]={lv:1,cash:0,mgr:false};toast('🏬 Đã mở '+BR[i].n);R_()}
+function upBr(i){const b=S.br[i];if(!b||b.lv>=10)return;const c=brUpCost(b,i);if(S.money<c)return;S.money-=c;b.lv++;R_()}
+function hireMgr(i){const b=S.br[i];if(!b||b.mgr)return;const c=mgrCost(i);if(S.money<c)return;S.money-=c;S.money+=b.cash;b.cash=0;b.mgr=true;toast('🧑‍💼 Đã thuê quản lý cho '+BR[i].n);R_()}
+function collectBr(i){const b=S.br[i];if(!b||b.cash<1)return;const g=b.cash;S.money+=g;b.cash=0;snd(900,.1,'triangle');toast('💵 Thu về '+fmt(g));R_()}
+function collectAll(){let g=0;S.br.forEach(b=>{if(b&&!b.mgr){g+=b.cash;b.cash=0}});if(g<1)return toast('Chưa có tiền để thu.');S.money+=g;snd(900,.1,'triangle');toast('💵 Thu về '+fmt(g));R_()}
+
+/* ===================== MẠNG LƯỚI ĐẠI LÝ ===================== */
+function mNet(){const n=S.net,m=netMul();
+ let h='<p><small>Bạn tuyển đại lý cấp 1. Họ tự tuyển đại lý cấp 2, cấp 2 lại tự tuyển cấp 3. Bạn nhận hoa hồng từ mọi tầng. Đây chỉ là cơ chế trong game, dùng tiền ảo.</small></p>';
+ h+=`<div class="row"><div class="inf"><b>👤 Bạn (chủ bãi)</b><br><small>Hoa hồng tổng: <b id="nt_inc">${fmt(netRate())}</b> 💵/giây</small></div></div>`;
+ h+=`<div class="row"><div class="inf"><b>🧑‍💼 Đại lý cấp 1</b> (<span id="na">${n.a}/${NET_MAX}</span>)<br><small>Mỗi người cho ${(3*m).toFixed(1)} 💵/giây. Bạn tự tuyển bằng tiền.</small></div><div class="bt">${n.a>=NET_MAX?'Đủ người':btn('Tuyển '+fmt(agentCost()),'buyAgent()',S.money>=agentCost())}</div></div>`;
+ h+=`<div class="row"><div class="inf"><b>👥 Đại lý cấp 2</b> (<span id="nb">${n.b}/${n.a*3}</span>)<br><small>Do cấp 1 tự tuyển (tối đa 3 người mỗi đại lý). Mỗi người ${(1.2*m).toFixed(1)} 💵/giây.</small></div></div>`;
+ h+=`<div class="row"><div class="inf"><b>👥 Đại lý cấp 3</b> (<span id="nc">${n.c}/${n.b*2}</span>)<br><small>Do cấp 2 tự tuyển (tối đa 2 người mỗi đại lý). Mỗi người ${(.5*m).toFixed(1)} 💵/giây.</small></div></div>`;
+ h+=`<p><small>Người mới xuất hiện sau mỗi ${netIv()} giây · lần tới còn <span id="nt_t">${Math.ceil(netIv()-n.t)}</span> giây.</small></p>`;
+ h+=`<div class="row"><div class="inf"><b>🎓 Đào tạo đại lý (cấp ${n.tr}/5)</b><br><small>Tăng 25% hoa hồng mỗi cấp và tuyển người nhanh hơn.</small></div><div class="bt">${n.tr>=5?'Tối đa':btn('Nâng cấp '+fmt(trainCost()),'trainNet()',S.money>=trainCost())}</div></div>`;
+ modal('🤝 Mạng lưới đại lý',h)}
+function buyAgent(){const c=agentCost();if(S.net.a>=NET_MAX||S.money<c)return;S.money-=c;S.net.a++;toast('🤝 Đã tuyển thêm một đại lý cấp 1');R_()}
+function trainNet(){const c=trainCost();if(S.net.tr>=5||S.money<c)return;S.money-=c;S.net.tr++;R_()}
+function liveUpd(){let e;
+ if(e=$('inc_tot'))e.textContent=fmt(passiveRate())+'/giây';
+ S.br.forEach((b,i)=>{if(b&&(e=$('bc'+i)))e.textContent=fmt(b.cash)+' / '+fmt(brCap(b,i))});
+ if(e=$('nt_inc'))e.textContent=fmt(netRate());
+ if(e=$('na'))e.textContent=S.net.a+'/'+NET_MAX;
+ if(e=$('nb'))e.textContent=S.net.b+'/'+S.net.a*3;
+ if(e=$('nc'))e.textContent=S.net.c+'/'+S.net.b*2;
+ if(e=$('nt_t'))e.textContent=Math.max(0,Math.ceil(netIv()-S.net.t))}
 
 /* ===================== KHÁCH & BÁN XE ===================== */
 function spawnCust(){if(cust.length>=S.saleN+3)return;const t=S.cars.filter(c=>c.st=='sale'&&!c.offer&&!cust.some(k=>k.car==c.id));if(!t.length)return;const c=pick(t);
@@ -238,7 +310,7 @@ function sell(c,price){if(!S.cars.includes(c)||c.st!='sale')return;const profit=
  S.money+=price;S.stat.sold++;S.stat.profit+=Math.max(0,profit);ev('sell');ev('profit',Math.max(0,profit));addXp(15+Math.max(0,Math.round(profit/200)));
  S.cars.splice(S.cars.indexOf(c),1);
  const k=cust.find(k=>k.car==c.id);if(k){k.st='happy';k.hp=1.3;k.say='Cảm ơn nhé!';k.sayT=2}
- const a=c.y+1.2;G.push({mi:c.mi,col:c.col,x:c.x,y:c.y,dir:'y',fwd:1,path:[[c.x,a],[DRV,a],[DRV,ROADY],[-9,ROADY]]});
+ const a=c.y+1.2;G.push({mi:c.mi,col:c.col,tn:c.tn,x:c.x,y:c.y,dir:'y',fwd:1,path:[[c.x,a],[DRV,a],[DRV,ROADY],[-9,ROADY]]});
  burst(c.x,c.y,price);snd(880,.1,'triangle');setTimeout(()=>snd(1320,.14,'triangle'),90);R_()}
 
 /* ===================== NHÂN VIÊN ===================== */
@@ -269,7 +341,7 @@ function jobMech(w){const att=S.cars.find(c=>c.st=='rep'&&!c.worker);
  if(freeBay()<0)return false;const c=S.cars.find(c=>c.st=='inv'&&!c.claim&&c.d>0&&S.money>=repCost(c));if(!c)return false;c.claim=true;
  w.job={tx:DOORX+.9,ty:10.5,wait:.6,valid:()=>c.st=='inv',cancel:()=>{c.claim=false},act:()=>{c.claim=false;const b=freeBay();if(b>=0)sendRepair(c,b)}};return true}
 function jobStage(w){if(freeSale()<0)return false;const c=S.cars.find(c=>c.st=='inv'&&!c.claim&&c.d==0);if(!c)return false;c.claim=true;
- w.job={tx:DOORX-.9,ty:10.5,wait:.6,valid:()=>c.st=='inv',cancel:()=>{c.claim=false},act:()=>{c.claim=false;const i=freeSale();if(i>=0)sendDisplay(c,i)}};return true}
+ w.job={tx:DOORX-.9,ty:10.5,wait:.6,valid:()=>c.st=='inv',cancel:()=>{c.claim=false},act:()=>{c.claim=false;if(S.tune>0&&!c.tn&&c.d==0&&S.money>=tuneCost(c)){doTune(c);w.say='Đã độ xe ⚡';w.sayT=1.6}const i=freeSale();if(i>=0)sendDisplay(c,i)}};return true}
 function jobSales(w){const c=S.cars.find(c=>c.st=='sale'&&c.offer>0&&!c.claim);if(!c)return false;c.claim=true;
  w.job={tx:c.x+.75,ty:c.y+.95,wait:1.1,valid:()=>S.cars.includes(c)&&c.st=='sale'&&c.offer>0,cancel:()=>{c.claim=false},act:()=>{c.claim=false;if(c.offer>0){sell(c,c.offer);w.say='Chốt đơn!';w.sayT=1.8}}};return true}
 function jobMkt(w){if(w.cd>0||S.leaf<=0||!S.cars.some(c=>c.st=='sale')||cust.length>=S.saleN)return false;
@@ -290,6 +362,10 @@ function tick(dt){
  if(S.leaf<10){S.leafT+=dt;if(S.leafT>=25){S.leaf++;S.leafT=0}}
  S.spinT=Math.max(0,S.spinT-dt);
  S.tradeT-=dt;if(S.tradeT<=0){S.tradeT=45;if(S.trade.length<3)S.trade.push(genTrade())}
+ /* thu nhập thụ động */
+ S.money+=netRate()*dt;
+ S.br.forEach((b,i)=>{if(!b)return;const r=brInc(b,i);if(b.mgr)S.money+=r*dt;else b.cash=Math.min(brCap(b,i),b.cash+r*dt)});
+ S.net.t+=dt;if(S.net.t>=netIv()){S.net.t=0;if(S.net.a>0){if(S.net.b<S.net.a*3)S.net.b++;if(S.net.c<S.net.b*2)S.net.c++}}
  /* xe tải */
  if(T.st=='away'){if(!S.auct.length){S.auctT-=dt;if(S.auctT<=0){S.auct=genAuct();T.st='in';T.x=-7;T.t=0}}}
  else if(T.st=='in'){T.x+=4*dt;if(T.x>=TRUCKX){T.x=TRUCKX;T.st='park';T.t=0;toast('🚚 Xe tải đã tới bãi!');snd(300,.2,'square')}}
@@ -320,7 +396,9 @@ function spark(x,y){const p=P(x,y,22);for(let i=0;i<7;i++)parts.push({k:'star',x
 function hud(){$('mo').textContent=fmt(S.money);$('ge').textContent=fmt(S.gems);$('lv').textContent=S.lv;$('xpf').style.width=Math.floor(S.xp/xpN()*100)+'%';$('vip').style.opacity=S.vip?1:.4;
  $('wt').textContent=(S.wSun?'☀️ ':'🌧 ')+tm(S.wLeft);$('at').textContent=T.st=='park'?'Có xe':T.st=='away'?tm(S.auctT):'Đang tới';$('cc').textContent=S.cars.length+'/'+S.cap;$('lf').textContent=S.leaf+'/10';
  $('tut').style.display=S.tut?'none':'block';
- const bd=(id,on)=>$(id).classList.toggle('on',on);bd('b_auct',T.st=='park');bd('b_q',S.quests.some(q=>q.have>=q.need&&!q.done));bd('b_d',Date.now()-S.daily>=864e5);bd('b_wh',S.spinT<=0);bd('b_t',S.trade.length>0)}
+ const bd=(id,on)=>$(id).classList.toggle('on',on);bd('b_auct',T.st=='park');bd('b_q',S.quests.some(q=>q.have>=q.need&&!q.done));bd('b_d',Date.now()-S.daily>=864e5);bd('b_wh',S.spinT<=0);bd('b_t',S.trade.length>0);
+ bd('b_c',S.br.some((b,i)=>b&&!b.mgr&&b.cash>=brCap(b,i)*.5));
+ liveUpd()}
 
 /* ===================== VẼ: NỀN TẢNG ===================== */
 const P=(x,y,z=0)=>[(x-y)*32,(x+y)*16-z];
@@ -378,20 +456,22 @@ function renderStatic(){const g=stat.getContext('2d');C=g;g.setTransform(RS,0,0,
   else{circ(p[0],p[1],2,['#ff8fb8','#ffe14d','#ffffff','#b89bff'][Math.floor(rnd()*4)]);circ(p[0],p[1],.7,'#f5a000')}}}
 
 /* ===================== VẼ: THỰC THỂ ===================== */
-function drawCar(cx,cy,z,dir,mi,col,dmg,fwd,s=1){
+function drawCar(cx,cy,z,dir,mi,col,dmg,fwd,s=1,tn=false){
  const m=MD[mi],L=m.L*s,W=m.W*s,bh=m.bh*s,ch=m.ch*s,cL=m.cl*s,X=dir=='x',dx=X?L:W,dy=X?W:L,z0=z+5*s;
  if(z==0)quad(cx-dx/2-.05,cy-dy/2-.05,cx+dx/2+.1,cy+dy/2+.1,0,'rgba(0,0,0,.22)');
  box(cx,cy,z0,dx,dy,bh,col);
+ if(tn){if(X)quad(cx-dx/2,cy-.07*s,cx+dx/2,cy+.07*s,z0+bh,'#f5b800');else quad(cx-.07*s,cy-dy/2,cx+.07*s,cy+dy/2,z0+bh,'#f5b800')}
  const lf=X?(u,v)=>P(cx+u*dx,cy+dy/2,z0+bh*v):(u,v)=>P(cx+dx/2,cy+u*dy,z0+bh*v);
  if(X)face('x',cx+dx/2+.004,cy-dy/2,cy+dy/2,z0,z0+bh*.28,'#2b2d32',false);else face('y',cy+dy/2+.004,cx-dx/2,cx+dx/2,z0,z0+bh*.28,'#2b2d32',false);
  const lc=fwd>0?'#fff4b0':'#e0453a';
  [-1,1].forEach(k=>{if(X)face('x',cx+dx/2+.006,cy+k*W*.28-.07*s,cy+k*W*.28+.07*s,z0+bh*.4,z0+bh*.78,lc,false);else face('y',cy+dy/2+.006,cx+k*W*.28-.07*s,cx+k*W*.28+.07*s,z0+bh*.4,z0+bh*.78,lc,false)});
- [-.3,.3].forEach(u=>{const p=lf(u,0);ell(p[0],p[1]+1*s,4.8*s,5.4*s,'#1c1e22');ell(p[0],p[1]+1*s,2.3*s,2.6*s,'#9aa0aa')});
+ [-.3,.3].forEach(u=>{const p=lf(u,0);ell(p[0],p[1]+1*s,4.8*s,5.4*s,'#1c1e22');ell(p[0],p[1]+1*s,2.3*s,2.6*s,tn?'#f5b800':'#9aa0aa')});
  if(dmg>=1){C.strokeStyle='rgba(0,0,0,.5)';C.lineWidth=1.4;[[-.35,.8,-.12,.5],[-.05,.85,.18,.55]].forEach(a=>{const p=lf(a[0],a[1]),q=lf(a[2],a[3]);C.beginPath();C.moveTo(p[0],p[1]);C.lineTo(q[0],q[1]);C.stroke()})}
  if(dmg>=2)poly([lf(.12,.85),lf(.4,.8),lf(.34,.25),lf(.1,.3)],'rgba(125,70,30,.75)');
  if(dmg>=3)poly([lf(-.45,.95),lf(-.2,.9),lf(-.25,.5),lf(-.48,.55)],'rgba(40,25,15,.7)');
  const cz=z0+bh,off=m.co*s,cdx=X?cL:W*.84,cdy=X?W*.84:cL,ccx=cx+(X?off:0),ccy=cy+(X?0:off);
  box(ccx,ccy,cz,cdx,cdy,ch,col);
+ if(tn){if(X)quad(ccx-cdx/2,ccy-.07*s,ccx+cdx/2,ccy+.07*s,cz+ch,'#ffffff');else quad(ccx-.07*s,ccy-cdy/2,ccx+.07*s,ccy+cdy/2,cz+ch,'#ffffff')}
  const g0=cz+ch*.16,g1=cz+ch*.88;
  if(X){face('y',ccy+cdy/2+.004,ccx-cdx/2+.08*s,ccx+cdx/2-.08*s,g0,g1,'#8fcbe9');face('x',ccx+cdx/2+.004,ccy-cdy/2+.07*s,ccy+cdy/2-.07*s,g0,g1,'#6fb1d6');face('y',ccy+cdy/2+.006,ccx-.03*s,ccx+.03*s,g0,g1,sh(col,.92),false)}
  else{face('x',ccx+cdx/2+.004,ccy-cdy/2+.08*s,ccy+cdy/2-.08*s,g0,g1,'#8fcbe9');face('y',ccy+cdy/2+.004,ccx-cdx/2+.07*s,ccx+cdx/2-.07*s,g0,g1,'#6fb1d6');face('x',ccx+cdx/2+.006,ccy-.03*s,ccy+.03*s,g0,g1,sh(col,.74),false)}
@@ -441,7 +521,7 @@ function drawBoard(){box(7.4,10.2,40,3.8,.22,14,'#9b6b3a');const fy=10.2+.11+.00
  faceText('BÃI XE CŨ',7.4,fy+.004,45.8,16,'rgba(60,30,5,.8)');faceText('BÃI XE CŨ',7.4,fy+.005,47,16,'#f8e5b8')}
 function barrel(x,y,col){const p=P(x,y,0);C.fillStyle=sh(col,.8);C.fillRect(p[0]-4.5,p[1]-11,9,11);ell(p[0],p[1],4.5,2.2,sh(col,.8));ell(p[0],p[1]-11,4.5,2.2,col);C.fillStyle='rgba(0,0,0,.25)';C.fillRect(p[0]-4.5,p[1]-7,9,1.2);C.fillRect(p[0]-4.5,p[1]-3,9,1.2)}
 function drawShopSign(){box(9.5,.7,0,.14,.14,20,'#555a63');box(11.7,.7,0,.14,.14,20,'#555a63');box(10.6,.7,20,2.6,.14,12,'#2f3a4a');
- faceText('XƯỞNG SỬA XE',10.6,.7+.07+.006,26,11,'#ffd23a');barrel(12.1,1.4,'#c0392b');barrel(12.3,1.9,'#2a6fdb');barrel(11.9,2.3,'#c0392b')}
+ faceText(S.tune>0?'XƯỞNG ĐỘ ⚡':'XƯỞNG SỬA XE',10.6,.7+.07+.006,26,11,'#ffd23a');barrel(12.1,1.4,'#c0392b');barrel(12.3,1.9,'#2a6fdb');barrel(11.9,2.3,'#c0392b')}
 function slotMarks(){const t=performance.now()/1000;
  for(let i=0;i<9;i++){const x=sx(i),y=sy(i);
   if(i>=S.saleN){quad(x-.62,y-.88,x+.62,y+.88,0,'rgba(20,25,40,.45)');lockI(x,y)}
@@ -468,7 +548,7 @@ const toS=(gx,gy,z)=>{const p=P(gx,gy,z);return[cam.x+p[0]*cam.z,cam.y+p[1]*cam.
 function tag(x,y,txt,bg,fg,size){C.font='800 '+size+'px system-ui';const w=C.measureText(txt).width+12,h=size+8;C.fillStyle='rgba(0,0,0,.25)';rr(x-w/2+1,y-h+2,w,h,h/2);C.fillStyle=bg;rr(x-w/2,y-h,w,h,h/2);C.fillStyle=fg;C.textAlign='center';C.textBaseline='middle';C.fillText(txt,x,y-h/2+1)}
 function overlay(){ctx.setTransform(D,0,0,D,0,0);C=ctx;const t=performance.now()/1000;
  S.cars.forEach(c=>{
-  if(c.st=='sale'){const q=toS(c.x,c.y,38);tag(q[0],q[1],(c.d>0?'🔧':'')+'$'+fmt(ask(c)),'#ffffff','#222',11);
+  if(c.st=='sale'){const q=toS(c.x,c.y,38);tag(q[0],q[1],(c.tn?'⚡':'')+(c.d>0?'🔧':'')+'$'+fmt(ask(c)),'#ffffff','#222',11);
    if(c.offer){const b=1+Math.sin(t*6)*.06;tag(q[0],q[1]-24,'💰 '+fmt(c.offer),'#ffe066','#222',12*b)}}
   else if(c.st=='rep'){const q=toS(c.x,c.y,34);C.fillStyle='rgba(0,0,0,.6)';rr(q[0]-20,q[1]-6,40,7,3);C.fillStyle='#43d36a';rr(q[0]-19,q[1]-5,Math.max(1,38*Math.min(1,c.p)),5,2)}});
  cust.forEach(k=>{if(k.sayT>0){const q=toS(k.x,k.y,34);tag(q[0],q[1],k.say,'#ffffff','#222',10)}});
@@ -483,8 +563,8 @@ function frame(){
  TR.forEach(t=>E.push([t[0]+t[1],()=>drawTree(t[0],t[1],t[2],t[3])]));
  E.push([19.9,drawGarage],[15.9,()=>drawPost(5.7)],[19.3,()=>drawPost(9.1)],[17.6,drawBoard],[11.3,drawShopSign]);
  if(T.st!='away')E.push([T.x+1+ROADY,drawTruck]);
- S.cars.forEach(c=>{if(c.st!='inv')E.push([c.x+c.y,()=>drawCar(c.x,c.y,0,c.dir,c.mi,c.col,c.d,c.fwd)])});
- G.forEach(c=>E.push([c.x+c.y,()=>drawCar(c.x,c.y,0,c.dir,c.mi,c.col,0,c.fwd)]));
+ S.cars.forEach(c=>{if(c.st!='inv')E.push([c.x+c.y,()=>drawCar(c.x,c.y,0,c.dir,c.mi,c.col,c.d,c.fwd,1,c.tn)])});
+ G.forEach(c=>E.push([c.x+c.y,()=>drawCar(c.x,c.y,0,c.dir,c.mi,c.col,0,c.fwd,1,c.tn)]));
  cust.forEach(k=>E.push([k.x+k.y,()=>person(k.x,k.y,k)]));
  W.forEach(w=>E.push([w.x+w.y,()=>person(w.x,w.y,w)]));
  E.sort((a,b)=>a[0]-b[0]);E.forEach(e=>e[1]());
@@ -516,6 +596,8 @@ renderStatic();rebuildStaff();
 W.forEach((w,i)=>{w.x=w.home[0];w.y=w.home[1]});
 let last=performance.now(),hT=0;
 function loop(t){const dt=Math.min(.1,(t-last)/1000);last=t;tick(dt);frame();hT-=dt;if(hT<=0){hT=.25;hud()}requestAnimationFrame(loop)}
+applyOffline();
 hud();requestAnimationFrame(loop);
 addEventListener('pagehide',save);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else{applyOffline();last=performance.now();hud()}});
 </script></body></html>
